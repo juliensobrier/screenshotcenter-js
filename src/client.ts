@@ -466,7 +466,7 @@ class BatchNamespace {
     const form = new FormData();
     form.append(
       'file',
-      new Blob([fileContent], { type: 'text/plain' }),
+      new Blob([new Uint8Array(fileContent)], { type: 'text/plain' }),
       'urls.txt'
     );
     for (const [k, v] of Object.entries(params)) {
