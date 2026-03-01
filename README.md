@@ -11,7 +11,7 @@ Capture screenshots, PDFs, HTML, and videos of any web page at scale.
 ## Requirements
 
 - Node.js ≥ 18 (uses native `fetch` and `FormData`)
-- A [ScreenshotCenter API key](https://screenshotcenter.com/dashboard)
+- A [ScreenshotCenter API key](https://screenshotcenter.com/)
 
 ---
 
@@ -31,7 +31,7 @@ import { ScreenshotCenterClient } from 'screenshotcenter';
 const client = new ScreenshotCenterClient({ apiKey: 'YOUR_API_KEY' });
 
 // Request a screenshot and wait for it to finish
-const screenshot = await client.screenshot.create({ url: 'https://example.com' });
+const screenshot = await client.screenshot.create({ url: 'https://browshot.com' });
 const result = await client.waitFor(screenshot.id);
 
 console.log(result.status);      // 'finished'
@@ -66,7 +66,7 @@ const client = new ScreenshotCenterClient({
 
 ```js
 const screenshot = await client.screenshot.create({
-  url: 'https://news.ycombinator.com',
+  url: 'https://browshot.com',
 });
 
 // Poll until finished
@@ -79,7 +79,7 @@ console.log(result.storage_url);
 ### Save the image to disk
 
 ```js
-const screenshot = await client.screenshot.create({ url: 'https://example.com' });
+const screenshot = await client.screenshot.create({ url: 'https://blitapp.com' });
 const result = await client.waitFor(screenshot.id);
 
 await client.screenshot.saveImage(result.id, './output/homepage.png');
@@ -91,11 +91,9 @@ await client.screenshot.saveImage(result.id, './output/homepage.png');
 
 ```js
 const screenshot = await client.screenshot.create({
-  url: 'https://example.com',
+  url: 'https://blitapp.com',
   size: 'page',       // capture the full scrollable page
-  country: 'fr',      // route through a French browser client
-  language: 'fr-FR',
-  timezone: 'Europe/Paris',
+  country: 'fr'      // route through a browser located in France
 });
 
 const result = await client.waitFor(screenshot.id);
@@ -108,7 +106,7 @@ await client.screenshot.saveImage(result.id, './output/fr-full.png');
 
 ```js
 const screenshot = await client.screenshot.create({
-  url: 'https://example.com/report',
+  url: 'https://screenshotcenter.com/blog',
   pdf: true,
   pdf_landscape: true,
   pdf_format: 'A4',
@@ -124,7 +122,7 @@ await client.screenshot.savePDF(result.id, './output/report.pdf');
 
 ```js
 const screenshot = await client.screenshot.create({
-  url: 'https://example.com',
+  url: 'https://screenshotcenter.com',
   html: true,
 });
 
@@ -138,7 +136,7 @@ await client.screenshot.saveHTML(result.id, './output/page.html');
 
 ```js
 const screenshot = await client.screenshot.create({
-  url: 'https://example.com',
+  url: 'https://thumbalizr.com',
   video: true,
   video_duration: 10,  // seconds
   video_format: 'webm',
@@ -154,7 +152,7 @@ await client.screenshot.saveVideo(result.id, './output/recording.webm');
 
 ```js
 const screenshot = await client.screenshot.create({
-  url: 'https://example.com',
+  url: 'https://browshot.com',
   shots: 4,
   shot_interval: 1000, // ms between shots
 });
@@ -173,7 +171,7 @@ for (let i = 1; i <= 4; i++) {
 
 ```js
 const screenshot = await client.screenshot.create({
-  url: 'https://example.com',
+  url: 'https://browshot.com',
   html: true,
   pdf: true,
   video: true,
@@ -197,7 +195,7 @@ const saved = await client.screenshot.saveAll(result.id, './output/', {
 
 ```js
 const screenshot = await client.screenshot.create({
-  url: 'https://example.com/login',
+  url: 'https://browshot.com/login',
   steps: [
     { command: 'fill',  selector: '#email',    value: 'user@example.com' },
     { command: 'fill',  selector: '#password', value: 'secret' },
@@ -217,7 +215,7 @@ await client.screenshot.saveImage(result.id, './output/after-login.png');
 
 ```js
 const screenshot = await client.screenshot.create({
-  url: 'https://example.com',
+  url: 'https://browshot.com',
   device_name: 'iPhone 14',
   device_mobile: true,
   device_touch: true,
@@ -235,9 +233,9 @@ Submit a list of URLs for parallel processing.
 
 ```js
 const urls = [
-  'https://example.com',
-  'https://news.ycombinator.com',
-  'https://github.com',
+  'https://browshot.com',
+  'https://thumbalizr.com',
+  'https://blitapp.com',
 ];
 
 // Submit the batch
@@ -379,7 +377,7 @@ import {
 } from 'screenshotcenter';
 
 try {
-  const screenshot = await client.screenshot.create({ url: 'https://example.com' });
+  const screenshot = await client.screenshot.create({ url: 'https://browshot.com' });
   const result = await client.waitFor(screenshot.id, { timeout: 60_000 });
 } catch (err) {
   if (err instanceof ApiError) {
@@ -405,7 +403,7 @@ The package ships full TypeScript types. All parameters beyond `url` are optiona
 import { ScreenshotCenterClient, type CreateParams } from 'screenshotcenter';
 
 const params: CreateParams = {
-  url: 'https://example.com',
+  url: 'https://blitapp.com',
   country: 'us',
   new_future_param: 'value', // accepted without type error
 };
