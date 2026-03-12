@@ -216,7 +216,7 @@ await client.screenshot.saveImage(result.id, './output/after-login.png');
 ```js
 const screenshot = await client.screenshot.create({
   url: 'https://browshot.com',
-  device_name: 'iPhone 14',
+  device_name: 'iphone_14',
   device_mobile: true,
   device_touch: true,
 });
