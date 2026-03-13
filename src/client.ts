@@ -28,8 +28,12 @@ function buildQuery(params: Record<string, unknown>): string {
   for (const [k, v] of Object.entries(params)) {
     if (v === undefined || v === null) continue;
     if (Array.isArray(v)) {
-      // Arrays are sent as repeated keys: tag=a&tag=b
-      for (const item of v) q.append(k, String(item));
+      const hasObjects = v.some((item) => item !== null && typeof item === 'object');
+      if (hasObjects) {
+        q.set(k, JSON.stringify(v));
+      } else {
+        for (const item of v) q.append(k, String(item));
+      }
     } else if (typeof v === 'object') {
       q.set(k, JSON.stringify(v));
     } else {
