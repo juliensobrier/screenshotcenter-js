@@ -471,6 +471,85 @@ describe('account.info', () => {
   });
 });
 
+// ── steps / trackers serialization ─────────────────────────────────────────
+
+describe('steps and trackers query serialization', () => {
+  it('serializes steps as JSON when array contains objects', async () => {
+    mockFetch.mockResolvedValueOnce(mockJson(envelope(FIXTURE_SCREENSHOT)));
+    const steps = [
+      { command: 'click', element: '#accept' },
+      { command: 'sleep', value: 2 },
+    ];
+    await client.screenshot.create({ url: 'https://example.com', steps });
+
+    const calledUrl = new URL(mockFetch.mock.calls[0][0] as string);
+    const raw = calledUrl.searchParams.get('steps');
+    expect(raw).not.toBeNull();
+    const parsed = JSON.parse(raw!);
+    expect(parsed).toEqual(steps);
+  });
+
+  it('serializes trackers as JSON when array contains objects', async () => {
+    mockFetch.mockResolvedValueOnce(mockJson(envelope(FIXTURE_SCREENSHOT)));
+    const trackers = [
+      { id: 'ga', name: 'Google Analytics', value: 'UA-12345' },
+    ];
+    await client.screenshot.create({ url: 'https://example.com', trackers });
+
+    const calledUrl = new URL(mockFetch.mock.calls[0][0] as string);
+    const raw = calledUrl.searchParams.get('trackers');
+    expect(raw).not.toBeNull();
+    const parsed = JSON.parse(raw!);
+    expect(parsed).toEqual(trackers);
+  });
+
+  it('serializes primitive arrays as repeated keys (tag)', async () => {
+    mockFetch.mockResolvedValueOnce(mockJson(envelope(FIXTURE_SCREENSHOT)));
+    await client.screenshot.create({
+      url: 'https://example.com',
+      tag: ['homepage', 'prod'],
+    });
+
+    const calledUrl = new URL(mockFetch.mock.calls[0][0] as string);
+    expect(calledUrl.searchParams.getAll('tag')).toEqual(['homepage', 'prod']);
+  });
+
+  it('does not produce [object Object] for steps', async () => {
+    mockFetch.mockResolvedValueOnce(mockJson(envelope(FIXTURE_SCREENSHOT)));
+    await client.screenshot.create({
+      url: 'https://example.com',
+      steps: [{ command: 'click', element: 'button' }],
+    });
+
+    const calledUrl = mockFetch.mock.calls[0][0] as string;
+    expect(calledUrl).not.toContain('[object+Object]');
+    expect(calledUrl).not.toContain('[object%20Object]');
+  });
+
+  it('does not produce [object Object] for trackers', async () => {
+    mockFetch.mockResolvedValueOnce(mockJson(envelope(FIXTURE_SCREENSHOT)));
+    await client.screenshot.create({
+      url: 'https://example.com',
+      trackers: [{ id: 'ga', name: 'GA', value: 'UA-12345' }],
+    });
+
+    const calledUrl = mockFetch.mock.calls[0][0] as string;
+    expect(calledUrl).not.toContain('[object+Object]');
+    expect(calledUrl).not.toContain('[object%20Object]');
+  });
+
+  it('serializes a plain object param (geo_overrides) as JSON', async () => {
+    mockFetch.mockResolvedValueOnce(mockJson(envelope(FIXTURE_SCREENSHOT)));
+    const geo = { lat: 48.8566, lon: 2.3522 };
+    await client.screenshot.create({ url: 'https://example.com', geo_overrides: geo });
+
+    const calledUrl = new URL(mockFetch.mock.calls[0][0] as string);
+    const raw = calledUrl.searchParams.get('geo_overrides');
+    expect(raw).not.toBeNull();
+    expect(JSON.parse(raw!)).toEqual(geo);
+  });
+});
+
 // ── Error classes ──────────────────────────────────────────────────────────────
 
 describe('error classes', () => {
