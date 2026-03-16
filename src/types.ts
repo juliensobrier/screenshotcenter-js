@@ -195,6 +195,24 @@ export interface Batch {
 }
 
 
+// ── Crawl ──────────────────────────────────────────────────────────────────────
+
+export type Crawl = {
+  id: number;
+  status: string;
+  domain: string;
+  start_url: string;
+  max_urls: number;
+  total_discovered: number;
+  processed: number;
+  failed: number;
+  error?: string;
+  created_at?: string;
+  started?: number;
+  finished?: number;
+  screenshots?: any[];
+};
+
 // ── Account ────────────────────────────────────────────────────────────────────
 
 export interface Account {

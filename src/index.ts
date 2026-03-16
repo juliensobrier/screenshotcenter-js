@@ -21,6 +21,8 @@ export type {
   // Batch
   Batch,
   BatchCreateParams,
+  // Crawl
+  Crawl,
   // Account
   Account,
 } from './types.js';

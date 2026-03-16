@@ -7,6 +7,7 @@ import type {
   Batch,
   BatchCreateParams,
   ClientOptions,
+  Crawl,
   CreateParams,
   DeleteData,
   ListParams,
@@ -56,6 +57,7 @@ export class ScreenshotCenterClient {
 
   readonly screenshot: ScreenshotNamespace;
   readonly batch: BatchNamespace;
+  readonly crawl: CrawlNamespace;
   readonly account: AccountNamespace;
 
   constructor(options: ClientOptions) {
@@ -66,6 +68,7 @@ export class ScreenshotCenterClient {
 
     this.screenshot = new ScreenshotNamespace(this);
     this.batch = new BatchNamespace(this);
+    this.crawl = new CrawlNamespace(this);
     this.account = new AccountNamespace(this);
   }
 
@@ -137,7 +140,8 @@ export class ScreenshotCenterClient {
   async _post<T>(
     endpoint: string,
     body: BodyInit,
-    params: Record<string, unknown> = {}
+    params: Record<string, unknown> = {},
+    headers?: Record<string, string>
   ): Promise<T> {
     const allParams = { key: this.apiKey, ...params };
     const qs = buildQuery(allParams);
@@ -146,9 +150,14 @@ export class ScreenshotCenterClient {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeout);
 
+    const fetchInit: RequestInit = { method: 'POST', body, signal: controller.signal };
+    if (headers && Object.keys(headers).length > 0) {
+      fetchInit.headers = headers;
+    }
+
     let res: Response;
     try {
-      res = await fetch(url, { method: 'POST', body, signal: controller.signal });
+      res = await fetch(url, fetchInit);
     } catch (err: any) {
       if (err?.name === 'AbortError') {
         throw new ApiError(`Request timed out after ${this.timeout}ms`, 408);
@@ -500,7 +509,12 @@ class BatchNamespace {
    * Cancel a running batch.
    */
   async cancel(id: number | string): Promise<void> {
-    await this.client._post('/batch/cancel', JSON.stringify({ id }), {});
+    await this.client._post(
+      '/batch/cancel',
+      JSON.stringify({ id }),
+      {},
+      { 'Content-Type': 'application/json' }
+    );
   }
 
   /**
@@ -544,6 +558,96 @@ class BatchNamespace {
     while (true) {
       const b = await this.info(id);
       if (b.status === 'finished' || b.status === 'error') return b;
+      if (Date.now() + interval > deadline) {
+        throw new TimeoutError(Number(id), timeout);
+      }
+      await sleep(interval);
+    }
+  }
+}
+
+// ── Crawl namespace ────────────────────────────────────────────────────────────
+
+class CrawlNamespace {
+  constructor(private readonly client: ScreenshotCenterClient) {}
+
+  /**
+   * Start a website crawl.
+   *
+   * @example
+   * const crawl = await client.crawl.create('https://example.com', 'example.com', 100);
+   * console.log(crawl.id, crawl.status);
+   */
+  async create(
+    url: string,
+    domain: string,
+    maxUrls: number,
+    params: Record<string, unknown> = {}
+  ): Promise<Crawl> {
+    return this.client._post<Crawl>(
+      '/crawl/create',
+      JSON.stringify({ url, domain, max_urls: maxUrls, ...params }),
+      {},
+      { 'Content-Type': 'application/json' }
+    );
+  }
+
+  /**
+   * Get crawl status and details by ID.
+   *
+   * @example
+   * const crawl = await client.crawl.info(12345);
+   */
+  async info(id: number | string): Promise<Crawl> {
+    return this.client._get<Crawl>('/crawl/info', { id });
+  }
+
+  /**
+   * List recent crawls.
+   *
+   * @example
+   * const crawls = await client.crawl.list({ limit: 10 });
+   */
+  async list(params: { limit?: number; offset?: number } = {}): Promise<Crawl[]> {
+    return this.client._get<Crawl[]>('/crawl/list', params);
+  }
+
+  /**
+   * Cancel a running crawl.
+   */
+  async cancel(id: number | string): Promise<void> {
+    await this.client._post(
+      '/crawl/cancel',
+      JSON.stringify({ id }),
+      {},
+      { 'Content-Type': 'application/json' }
+    );
+  }
+
+  /**
+   * Poll until a crawl reaches a terminal state (finished, error, or cancelled).
+   *
+   * @example
+   * const result = await client.crawl.waitFor(crawl.id);
+   * console.log(`Processed ${result.processed}/${result.max_urls}`);
+   */
+  async waitFor(
+    id: number | string,
+    options: WaitOptions = {}
+  ): Promise<Crawl> {
+    const interval = options.interval ?? DEFAULT_POLL_INTERVAL_MS;
+    const timeout = options.timeout ?? DEFAULT_WAIT_TIMEOUT_MS;
+    const deadline = Date.now() + timeout;
+
+    while (true) {
+      const c = await this.info(id);
+      if (
+        c.status === 'finished' ||
+        c.status === 'error' ||
+        c.status === 'cancelled'
+      ) {
+        return c;
+      }
       if (Date.now() + interval > deadline) {
         throw new TimeoutError(Number(id), timeout);
       }
